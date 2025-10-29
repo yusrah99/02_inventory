@@ -1,24 +1,10 @@
-
-
-
-
-
+import 'dart:io';
 import 'package:flutter/material.dart';
-
-/// Simple product model
-class Product {
-  final String id;         // unique id used by Dismissible
-  final String name;       // product name
-  int stock;               // product stock (mutable for demo)
-  final String imageUrl;   // url to product image
-
-  Product({
-    required this.id,
-    required this.name,
-    required this.stock,
-    required this.imageUrl,
-  });
-}
+import 'package:hng2_inventory_app/Database/db_helper.dart';
+import 'package:hng2_inventory_app/Database/inventory_db.dart';
+import 'package:hng2_inventory_app/add_product.dart';
+import 'package:hng2_inventory_app/all_products.dart';
+import 'package:hng2_inventory_app/product.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -28,198 +14,282 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // sample product list (in a real app this would come from a backend or DB)
-  final List<Product> _products = List.generate(
-    10,
-    (i) => Product(
-      id: 'p$i',
-      name: 'Product #$i',
-      stock: 5 + i,
-      imageUrl: 'https://picsum.photos/seed/p$i/200/200', // placeholder image
-    ),
+  final DbHelper dbHelper = DbHelper();
+  List<Product> _allProducts = [];
+  List<Product> _displayedProducts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProducts();
+  }
+
+  // Reload products whenever page is shown
+  Future<void> _loadProducts() async {
+    final data = await dbHelper.getProducts();
+    if (mounted) {
+      setState(() {
+        _allProducts = data;
+        _displayedProducts = _allProducts.where((p) => p.stock < 30).toList();
+      });
+    }
+  }
+
+  // Go to product details and refresh when back
+  Future<void> _openProduct(Product product) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ProductPage(product: product)),
+    );
+     // refresh after returning
+    _loadProducts();
+  }
+
+
+void _openAddProductPage() async {
+  final newProduct = await Navigator.push<Product>(
+    context,
+    MaterialPageRoute(builder: (context) => const AddProduct()),
   );
 
+  if (newProduct != null) {
+    setState(() {
+      _allProducts.add(newProduct);
+      _displayedProducts = _allProducts.where((p) => p.stock < 30).toList();
+    });
+  }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.teal,
-      body: CustomScrollView(
-        slivers: [
-          // ---------- Your SliverAppBar ----------
-          SliverAppBar(
-            leading: Icon(Icons.menu),                // left icon
-            actions: [Icon(Icons.search)],            // right icon(s)
-            title: Text('I N V E N T O R Y'),        // title text
-            expandedHeight: 300,                      // height when expanded
-            pinned: true,                             // keep app bar visible when scrolled
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                color: Colors.teal[300],
-                alignment: Alignment.center,
-                child: Text(
-                  'Welcome',
-                  style: TextStyle(fontSize: 28, color: Colors.white70),
-                ),
-              ),
-            ),
-          ),
-
-          // ---------- Optional header inside scroll (non-sliver widget adapted) ----------
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Products',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-
-          // ---------- The product list implemented as a SliverList ----------
-          SliverList(
-            // SliverChildBuilderDelegate lazily builds list items (recommended)
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final product = _products[index];
-
-                // Dismissible makes swipe-to-delete behaviour.// USE SLIDEABLE HERE INSTEAD 
-                return Dismissible(
-                  key: ValueKey(product.id), // unique key for each item
-                  direction: DismissDirection.endToStart, // swipe left only
-                  background: Container(
-                    // background shown behind the item while swiping
-                    color: Colors.red,
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.delete, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text('Delete', style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                  ),
-
-                  // confirmDismiss allows showing a dialog before actually deleting //FIND SOMETHING FOR THIS TOO 
-                  confirmDismiss: (direction) async {
-                    final result = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: Text('Delete ${product.name}?'),
-                        content: Text('Are you sure you want to delete this product?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            child: Text('Delete'),
-                          ),
-                        ],
+      backgroundColor: Colors.teal[50],
+      body: RefreshIndicator(
+        onRefresh: _loadProducts,
+        child: CustomScrollView(
+          slivers: [
+           SliverAppBar(
+              pinned: true,
+              floating: true,
+              backgroundColor: Colors.teal,
+              expandedHeight: 150,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  padding: const EdgeInsets.all(16),
+                  alignment: Alignment.bottomLeft,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Total Stock",
+                        style: TextStyle(color: Colors.white70, fontSize: 16),
                       ),
-                    );
-                    return result == true;
-                  },
-
-                  // onDismissed is called after confirmDismiss returns true
-                  onDismissed: (direction) {
-                    setState(() {
-                      _products.removeAt(index);
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${product.name} deleted')),
-                    );
-                  },
-
-                  child: Container(
-                    // Visual container for each list item
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
+                      Text(
+                        "${_allProducts.fold<int>(0, (sum, p) => sum + (p.stock ?? 0))} items",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
-                    ),
-
-                    // The row holds the image on the left and details on the right
-                    child: Row(
-                      children: [
-                        // Left: product image
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            product.imageUrl,
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                            errorBuilder: (ctx, err, stack) => Container(
-                              width: 100,
-                              height: 100,
-                              color: Colors.grey[200],
-                              alignment: Alignment.center,
-                              child: Icon(Icons.image_not_supported),
-                            ),
-                          ),
-                        ),
-
-                        SizedBox(width: 12),
-
-                        // Middle: name and stock (expands to take available space)
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                product.name,
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 6),
-                              Text('Stock: ${product.stock}'),
-                            ],
-                          ),
-                        ),
-
-                        // Right: a small button to reduce stock (example action)// NOT ADDED
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.remove_circle_outline),
-                              onPressed: () {
-                                setState(() {
-                                  if (product.stock > 0) product.stock -= 1;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 12, top: 8),
+                  child: GestureDetector(
+                    onTap: () async {
+                      // Open Add Product Page
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AddProduct()),
+                      );
+                      // to refresh product list after adding new product
+                      _loadProducts(); 
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 26,
+                      ),
                     ),
                   ),
-                );
-              },
-              childCount: _products.length, // number of items in the list
+                ),
+              ],
             ),
-          ),
 
-          // Optional footer or spacing
-          SliverToBoxAdapter(
-            child: SizedBox(height: 32),
-          ),
-        ],
+            
+            SliverToBoxAdapter(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Low Stock Products',
+                      style: TextStyle(
+                        color: Colors.teal,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () async {
+                        // go to all products and refresh when back
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const AllProduct()),
+                        );
+                        _loadProducts();
+                      },
+                      child: const Text(
+                        'All Products',
+                        style: TextStyle(
+                          color: Colors.teal,
+                          fontSize: 16,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Product List 
+            _displayedProducts.isEmpty
+                ? const SliverToBoxAdapter(
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: Text(
+                          'No products to show',
+                          style: TextStyle(color: Colors.white70, fontSize: 18),
+                        ),
+                      ),
+                    ),
+                  )
+                : SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final product = _displayedProducts[index];
+                        final bool isLowStock = product.stock < 30;
+
+                        return GestureDetector(
+                          onTap: () => _openProduct(product),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 5,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: _buildImage(product.imagePath),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product.name,
+                                        style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          Text('Stock: ${product.stock}'),
+                                          if (isLowStock) ...[
+                                            const SizedBox(width: 6),
+                                            const Icon(
+                                              Icons.warning_amber_rounded,
+                                              color: Colors.redAccent,
+                                              size: 18,
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      Text(
+                                          'Price: ₦${product.pricePerKg} per kg'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      childCount: _displayedProducts.length,
+                    ),
+                  ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ],
+        ),
       ),
     );
   }
+
+  // To handle image display from assets or file system
+  Widget _buildImage(String? path) {
+    if (path == null || path.isEmpty) {
+      return const Icon(Icons.image_not_supported, size: 64);
+    }
+
+    if (path.startsWith('assets/')) {
+      return Image.asset(
+        path,
+        width: 64,
+        height: 64,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            const Icon(Icons.image_not_supported, size: 64),
+      );
+    } else {
+      return Image.file(
+        File(path),
+        width: 64,
+        height: 64,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            const Icon(Icons.image_not_supported, size: 64),
+      );
+    }
+  }
 }
+
+
+
+
+
+
+
+
+
+

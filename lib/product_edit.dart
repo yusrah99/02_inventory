@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
+import 'package:hng2_inventory_app/Database/db_helper.dart';
 
 class EditProduct extends StatefulWidget {
-  const EditProduct({super.key});
+  final Map<String, dynamic> product; 
+
+  const EditProduct({super.key, required this.product});
 
   @override
   State<EditProduct> createState() => _EditProductState();
@@ -12,37 +14,84 @@ class EditProduct extends StatefulWidget {
 class _EditProductState extends State<EditProduct> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _nameController = TextEditingController(text: "Product Name");
-  final TextEditingController _stockController = TextEditingController(text: "10");
-  final TextEditingController _supplierController = TextEditingController(text: "ABC Supplies");
+  late TextEditingController _stockController;
+  late TextEditingController _supplierController;
+  late TextEditingController _priceController;
 
-  File? _imageFile;
+  @override
+  void initState() {
+    super.initState();
+    _stockController =
+        TextEditingController(text: widget.product['stock'].toString());
+    _supplierController =
+        TextEditingController(text: widget.product['supplier'] ?? '');
+    _priceController =
+        TextEditingController(text: widget.product['price'].toString());
+  }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() {
-        _imageFile = File(picked.path);
-      });
+  @override
+  void dispose() {
+    _stockController.dispose();
+    _supplierController.dispose();
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _updateProduct() async {
+    if (_formKey.currentState!.validate()) {
+      final dbHelper = DbHelper();
+      final db = await dbHelper.database;
+
+      // Create updated map
+      final updatedProduct = {
+        'id': widget.product['id'],
+        'name': widget.product['name'], 
+        'code': widget.product['code'], 
+        'stock': int.tryParse(_stockController.text) ?? 0,
+        'supplier': _supplierController.text,
+        'price': double.tryParse(_priceController.text) ?? 0.0,
+        'imagePath': widget.product['imagePath'], 
+      };
+
+      await db.update(
+        'products',
+        updatedProduct,
+        where: 'id = ?',
+        whereArgs: [widget.product['id']],
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Product details updated successfully!'),
+            backgroundColor: Colors.teal,
+          ),
+        );
+
+        // 👇 Return updated product map to previous screen
+        Navigator.pop(context, updatedProduct);
+      }
     }
   }
 
-  void _saveChanges() {
-    if (_formKey.currentState!.validate()) {
-      // Here you’d normally update the database
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Product details updated successfully!')),
-      );
+  Widget _buildImage(String? path) {
+    if (path == null || path.isEmpty) {
+      return const Icon(Icons.image_not_supported, size: 80, color: Colors.grey);
     }
+    if (path.startsWith('assets/')) {
+      return Image.asset(path, height: 180, fit: BoxFit.cover);
+    }
+    return Image.file(File(path), height: 180, fit: BoxFit.cover);
   }
 
   @override
   Widget build(BuildContext context) {
+    final product = widget.product;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Edit Product"),
-        backgroundColor: Colors.blue.shade700,
+        title: Text("Edit ${product['name']}"),
+        backgroundColor: Colors.teal,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -51,76 +100,86 @@ class _EditProductState extends State<EditProduct> {
           key: _formKey,
           child: Column(
             children: [
-              // --- Image Preview + Button ---
-              GestureDetector(
-                onTap: _pickImage,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: _imageFile != null
-                      ? Image.file(
-                          _imageFile!,
-                          height: 180,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        )
-                      : Container(
-                          height: 180,
-                          width: double.infinity,
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.camera_alt, size: 50, color: Colors.grey),
-                        ),
-                ),
+              // Product Image
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: _buildImage(product['imagePath']),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
 
-              // --- Product Name ---
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Product Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value!.isEmpty ? 'Please enter product name' : null,
-              ),
-              const SizedBox(height: 20),
-
-              // --- Stock ---
+              // Stock no.
               TextFormField(
                 controller: _stockController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Stock Quantity',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.inventory_2, color: Colors.teal),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
-                validator: (value) => value!.isEmpty ? 'Please enter stock quantity' : null,
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter stock quantity' : null,
               ),
               const SizedBox(height: 20),
 
-              // --- Supplier ---
+              // Supplier
               TextFormField(
                 controller: _supplierController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Supplier Name',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.local_shipping, color: Colors.teal),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
-                validator: (value) => value!.isEmpty ? 'Please enter supplier name' : null,
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter supplier name' : null,
+              ),
+              const SizedBox(height: 20),
+
+              // Price
+              TextFormField(
+                controller: _priceController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Product Price',
+                  prefixIcon: const Icon(Icons.attach_money, color: Colors.teal),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter product price' : null,
               ),
               const SizedBox(height: 40),
 
-              // --- Save Button ---
+              //  Save Button
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 55,
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.save),
-                  label: const Text('Save Changes'),
+                  icon: const Icon(Icons.save, color: Colors.white),
+                  label: const Text(
+                    'Save Changes',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade700,
+                    backgroundColor: Colors.teal,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(15),
                     ),
                   ),
-                  onPressed: _saveChanges,
+                  onPressed: _updateProduct,
                 ),
               ),
             ],
@@ -130,4 +189,3 @@ class _EditProductState extends State<EditProduct> {
     );
   }
 }
-
