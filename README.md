@@ -66,7 +66,7 @@ You can install and test the app directly on your Android device.
 
 ##🧑‍💻 Developer
 
-Yusrah Temitope
+Yusrah Temitope Afiz- Ogun
 Flutter Developer | HNG Internship Mobile Track
 📧yusraht.afiz99@gmail.com
 
