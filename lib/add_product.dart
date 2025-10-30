@@ -116,7 +116,7 @@ class _AddProductState extends State<AddProduct> {
                     showModalBottomSheet(
                       context: context,
                       builder: (_) => Container(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(10),
                         height: 150,
                         child: Column(
                           children: [
