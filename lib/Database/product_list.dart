@@ -2,7 +2,7 @@ import 'package:hng2_inventory_app/Database/inventory_db.dart';
 
 final List<Product> seafoodProducts = [
   Product(
-    id: 1,
+    id: '1',
     name: 'Fresh Salmon',
     code: 'SF001',
     stock: 50,
@@ -11,7 +11,7 @@ final List<Product> seafoodProducts = [
     imagePath: 'assets/images/salmon.jpg',
   ),
   Product(
-    id: 2,
+    id: '2',
     name: 'Tilapia Fish',
     code: 'SF002',
     stock: 60,
@@ -20,7 +20,7 @@ final List<Product> seafoodProducts = [
     imagePath: 'assets/images/tilapia.jpg',
   ),
   Product(
-    id: 3,
+    id: '3',
     name: 'Crab',
     code: 'SF003',
     stock: 15,
@@ -29,7 +29,7 @@ final List<Product> seafoodProducts = [
     imagePath: 'assets/images/crab.jpeg',
   ),
   Product(
-    id: 4,
+    id: '4',
     name: 'Shrimp',
     code: 'SF004',
     stock: 10,
@@ -38,7 +38,7 @@ final List<Product> seafoodProducts = [
     imagePath: 'assets/images/shrimp.jpeg',
   ),
   Product(
-    id: 5,
+    id: '5',
     name: 'Lobster',
     code: 'SF005',
     stock: 10,
@@ -47,7 +47,7 @@ final List<Product> seafoodProducts = [
     imagePath: 'assets/images/lobster.jpeg',
   ),
   Product(
-    id: 6,
+    id: '6',
     name: 'Catfish',
     code: 'SF006',
     stock: 25,
@@ -56,7 +56,7 @@ final List<Product> seafoodProducts = [
     imagePath: 'assets/images/catfish.jpeg',
   ),
   Product(
-    id: 7,
+    id: '7',
     name: 'Oysters',
     code: 'SF007',
     stock: 40,
@@ -65,7 +65,7 @@ final List<Product> seafoodProducts = [
     imagePath: 'assets/images/oysters.jpeg',
   ),
   Product(
-    id: 8,
+    id: '8',
     name: 'Squid',
     code: 'SF008',
     stock: 18,
@@ -74,7 +74,7 @@ final List<Product> seafoodProducts = [
     imagePath: 'assets/images/squid.jpeg',
   ),
   Product(
-    id: 9,
+    id: '9',
     name: 'Clams',
     code: 'SF009',
     stock: 22,
@@ -85,7 +85,7 @@ final List<Product> seafoodProducts = [
   
   
   Product(
-    id: 10,
+    id: '10',
     name: 'Sardines',
     code: 'SF012',
     stock: 80,
@@ -96,7 +96,7 @@ final List<Product> seafoodProducts = [
   
   
   Product(
-    id: 11,
+    id: '11',
     name: 'Periwinkle',
     code: 'SF015',
     stock: 45,

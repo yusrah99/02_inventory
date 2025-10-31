@@ -1,12 +1,12 @@
-
+// optional image path or base64 string
 class Product {
-  final int? id;
+  final String id;
   final String name;
   final String code;
   final int stock;
   final String supplier;
   final double pricePerKg;
-  final String? imagePath; // optional image path or base64 string
+  final String? imagePath; 
 
   Product({
     required this.id,
@@ -17,6 +17,28 @@ class Product {
     required this.pricePerKg,
     this.imagePath,
   });
+
+
+  //copy with method 
+  Product copyWith({
+    String? id,
+    String? name,
+    String? code,
+    int? stock,
+    String? supplier,
+    double? pricePerKg,
+    String? imagePath,
+  }) {
+    return Product(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      code: code ?? this.code,
+      stock: stock ?? this.stock,
+      supplier: supplier ?? this.supplier,
+      pricePerKg: pricePerKg ?? this.pricePerKg,
+      imagePath: imagePath ?? this.imagePath,
+    );
+  }
 
   // Convert Product object to Map for database storage
   Map<String, dynamic> toMap() {

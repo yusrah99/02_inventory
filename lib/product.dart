@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:hng2_inventory_app/Database/db_helper.dart';
 import 'package:hng2_inventory_app/Database/inventory_db.dart';
@@ -24,11 +26,12 @@ class _ProductPageState extends State<ProductPage> {
 
   // refresh product details from database
   Future<void> _refreshProduct() async {
-    if (product.id != null) {
+    if (product.id .isNotEmpty) {
       final updatedProduct = await dbHelper.getProductById(product.id!);
       if (updatedProduct != null) {
         setState(() {
           product = updatedProduct;
+        
         });
       }
     }
@@ -64,8 +67,8 @@ class _ProductPageState extends State<ProductPage> {
                     height: 300,
                     width: double.infinity,
                     color: Colors.blue[200],
-                    child: product.imagePath != null
-                        ? Image.asset(product.imagePath!, fit: BoxFit.cover)
+                    child: product.imagePath != null && File(product.imagePath!).existsSync()
+                        ? Image.file(File(product.imagePath!), fit: BoxFit.cover)
                         : const Icon(Icons.image_not_supported, size: 100),
                   ),
                 ),

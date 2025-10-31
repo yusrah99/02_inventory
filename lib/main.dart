@@ -34,12 +34,12 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _initializeDatabase();
+   // _initializeDatabase();
   }
 
   Future<void> _initializeDatabase() async {
     // Insert seafood products only once
-    await dbHelper.insertSeafoodProducts(seafoodProducts);
+    //await dbHelper.insertSeafoodProducts(seafoodProducts);
 
     // Check existing products
     final existingProducts = await dbHelper.getProducts();
@@ -67,11 +67,8 @@ class _MyAppState extends State<MyApp> {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
       ),
-      home: _isLoading
-          ? const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            )
-          : const HomePage(),
+      home: 
+          const HomePage(),
     );
   }
 }

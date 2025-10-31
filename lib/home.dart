@@ -34,7 +34,7 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
-
+/*
   // Go to product details and refresh when back
   Future<void> _openProduct(Product product) async {
     await Navigator.push(
@@ -46,6 +46,7 @@ class _HomePageState extends State<HomePage> {
   }
 
 
+// ignore: unused_element
 void _openAddProductPage() async {
   final newProduct = await Navigator.push<Product>(
     context,
@@ -58,7 +59,7 @@ void _openAddProductPage() async {
       _displayedProducts = _allProducts.where((p) => p.stock < 30).toList();
     });
   }
-}
+}*/
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -186,7 +187,7 @@ void _openAddProductPage() async {
                         final bool isLowStock = product.stock < 30;
 
                         return GestureDetector(
-                          onTap: () => _openProduct(product),
+                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ProductPage(product: product),)),
                           child: Container(
                             margin: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 6),

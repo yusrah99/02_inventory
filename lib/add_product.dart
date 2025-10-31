@@ -1,10 +1,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:hng2_inventory_app/Database/inventory_db.dart';
-import 'package:hng2_inventory_app/product.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hng2_inventory_app/Database/db_helper.dart';
 import 'dart:io';
+
+import 'package:uuid/uuid.dart';
 
 class AddProduct extends StatefulWidget {
   const AddProduct({super.key});
@@ -43,7 +44,7 @@ class _AddProductState extends State<AddProduct> {
     if (_formKey.currentState!.validate()) {
       // Create product WITHOUT id
       final product = Product(
-        id: null,
+        id: Uuid().v4(),
         name: _nameController.text.trim(),
         stock: int.tryParse(_stockController.text.trim()) ?? 0,
         pricePerKg: double.tryParse(_priceController.text.trim()) ?? 0.0,
@@ -57,7 +58,7 @@ class _AddProductState extends State<AddProduct> {
 
       // Create product with ID to return
       final newProduct = Product(
-        id: id,
+        id: id.toString(),
         name: product.name,
         stock: product.stock,
         pricePerKg: product.pricePerKg,
@@ -67,8 +68,10 @@ class _AddProductState extends State<AddProduct> {
       );
 
       // Return to HomePage
-      Navigator.pop(context, newProduct);
-
+      if (mounted) {
+        Navigator.pop(context, newProduct);
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Product saved successfully!')),
       );

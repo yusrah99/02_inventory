@@ -1,7 +1,6 @@
 import 'package:hng2_inventory_app/Database/inventory_db.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 
 
@@ -27,7 +26,7 @@ class DbHelper {
     //creating the db table 
     return await openDatabase(
     path,
-    version: 6,  // <-- increment this number every time you change table structure
+    version: 1,  
     onCreate: _createDb,
     onUpgrade: (db, oldVersion, newVersion) async {
       // Optional: drop and recreate tables to reset database
@@ -39,7 +38,7 @@ class DbHelper {
  Future<void> _createDb(Database db, int version) async {
     await db.execute('''
       CREATE TABLE products(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
         name TEXT,
         code TEXT,
         stock INTEGER,
@@ -50,20 +49,14 @@ class DbHelper {
     ''');
   }
 
+/// PUT THIS IN  A DIFFERENT FILE LATER 
 // inserting the product into the table 
 
 Future<int> insertProduct(Product product) async {
   final db = await database;
   return await db.insert(
     'products',
-    {
-      'name': product.name,
-      'code': product.code,
-      'stock': product.stock,
-      'supplier': product.supplier,
-      'price': product.pricePerKg,
-      'imagePath': product.imagePath,
-    },
+    product.toMap(),
     conflictAlgorithm: ConflictAlgorithm.replace,
   );
 }
@@ -77,11 +70,11 @@ Future<void> insertSeafoodProducts(List<Product> seafoodProducts) async {
   );
 
   if (count != null && count > 0) {
-    print('✅ Sample products already exist. Skipping insert.');
+    print('Sample products already exist. Skipping insert.');
     return;
   }
 
-  // if not then insert the sample date from seafoodProducts list
+  // if not then insert the sample data from seafoodProducts list
   for (final product in seafoodProducts) {
     await insertProduct(product);
   }
@@ -115,14 +108,14 @@ Future <List<Product>> getProducts() async{
   }
 
 // Delete a product
-  Future<int> deleteProduct(int id) async {
+  Future<int> deleteProduct(String id) async {
     final db = await database;
     return await db.delete('products', where: 'id = ?', whereArgs: [id]);
   }
 
 
-// 🔍 Get a single product by ID
-Future<Product?> getProductById(int id) async {
+// Get a single product by ID
+Future<Product?> getProductById(String id) async {
   final db = await database;
   final maps = await db.query(
     'products',
